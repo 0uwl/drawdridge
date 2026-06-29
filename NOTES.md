@@ -9,7 +9,7 @@ boilerplate, not tied to the 1.0 Redis/device-self-registration model:
 - `drawbridge/utils.py` — `success_response`/`error_response` envelope
   helpers, `allowed_file()` extension check, and a file-hash helper switched
   from MD5 to **SHA-256** to match the "SHA-256 hash verification"
-  requirement in `docs/drawbridge.md`.
+  requirement in `docs/architecture.md`.
 - `gunicorn.conf.py` — same worker config, bind port changed to `8080`
   per the architecture doc (1.0 used 5000).
 - `Containerfile` — adapted to the doc's container spec: `python:3.12-slim`,
@@ -22,14 +22,19 @@ boilerplate, not tied to the 1.0 Redis/device-self-registration model:
 ## Not included — still needs to be designed/written
 
 Nothing in 1.0 implements the actual Drawbridge architecture, so none of
-this exists yet (see `docs/drawbridge.md` for the target shape):
+this exists yet (see `docs/architecture.md` for the target shape, and the
+other `docs/` files for the per-area detail):
 
-- `drawbridge/db.py` — SQLite schema + connection handling (`devices`,
-  `provisioning_events` tables).
-- `drawbridge/models.py` — `Device`, `ProvisioningEvent` dataclasses.
+- `drawbridge/db.py` — SQLAlchemy engine/session setup + `init_db()` (`devices`,
+  `provisioning_log`, `settings`, `users` tables).
+- `drawbridge/models.py` — `Device`, `ProvisioningLog`, `Setting`, `User` SQLAlchemy models.
 - `drawbridge/kea.py` — Kea Control Agent client (`reservation-add`/`reservation-del`).
 - `drawbridge/api/lease.py`, `devices.py`, `scripts.py` — the actual endpoints
   (`/api/lease-event`, `/api/devices`, `/scripts/<filename>`, etc).
+- `drawbridge/auth.py` — Flask-Login setup (`LoginManager`, `user_loader`,
+  password hashing); future home for the planned SAML SP integration.
+- `drawbridge/api/auth.py`, `users.py`, `settings.py` — login/logout,
+  operator-account CRUD, and the log-retention setting endpoints.
 - The Kea `leases4_committed` hook/callout itself (C++ or Python) and the
   `kea-dhcp4.conf` / `kea-ctrl-agent.conf` configs — the DHCP park/unpark
   gate is the core of Drawbridge and has no equivalent in 1.0 at all.

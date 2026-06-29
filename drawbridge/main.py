@@ -15,13 +15,13 @@ def create_app(config_dict: dict = {}):
     """Flask app factory. Ported from the ZTP 1.0 backend's create_app() —
     config loading, gunicorn logger wiring, and the /health check carry over
     unchanged. Blueprint registration is intentionally empty: lease.py,
-    devices.py, and scripts.py (see docs/drawbridge.md) are new for
+    devices.py, and scripts.py (see docs/api.md) are new for
     Drawbridge and still need to be designed/written.
     """
 
     app = Flask(__name__)
 
-    # Configuration (env vars per docs/drawbridge.md, overridable via config_dict for tests)
+    # Configuration (env vars per docs/deployment.md, overridable via config_dict for tests)
     app.config['DATABASE_PATH'] = os.getenv('DATABASE_PATH', DATABASE_PATH)
     app.config['SCRIPTS_PATH'] = os.getenv('SCRIPTS_PATH', SCRIPTS_PATH)
     app.config['KEA_CTRL_URL'] = os.getenv('KEA_CTRL_URL', KEA_CTRL_URL)
@@ -52,7 +52,7 @@ def create_app(config_dict: dict = {}):
     # app.register_blueprint(devices.create_blueprint(), url_prefix='/api/devices')
     # app.register_blueprint(scripts.create_blueprint(), url_prefix='/scripts')
 
-    # TODO(drawbridge): initialize SQLite schema (see docs/drawbridge.md "SQLite Schema")
+    # TODO(drawbridge): initialize SQLite schema (see docs/database.md)
     # with app.app_context():
     #     init_db(app)
 

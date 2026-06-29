@@ -18,6 +18,6 @@ ENV FLASK_ENV=production
 
 EXPOSE 8080
 
-# /app/data and /app/scripts are mount points (see docs/drawbridge.md) — do
+# /app/data and /app/scripts are mount points (see docs/deployment.md) — do
 # not bake content into the image; bind-mount them at runtime.
-CMD ["gunicorn", "drawbridge:create_app()"]
+CMD ["gunicorn", "drawbridge:create_app()", "-c", "drawbridge/gunicorn.conf.py"]
