@@ -1,7 +1,8 @@
 import logging
 import os
+from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 
 DATABASE_PATH = '/app/drawbridge.db'
 SCRIPTS_PATH = '/app/scripts'
@@ -10,12 +11,18 @@ KEA_SUBNET_ID = '1'
 LEASE_EVENT_TIMEOUT = '2'
 LOG_LEVEL = 'INFO'
 
+# Built Vue SPA (frontend/, baked in at image build time — see
+# docs/frontend.md). static_folder is disabled below so Flask doesn't
+# register its own implicit static route on the same URL pattern as the
+# catch-all; this path is used directly instead.
+FRONTEND_DIST = Path(__file__).resolve().parent / 'static'
+
 
 def create_app(config_dict: dict = {}):
     """Flask app factory
     """
 
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder=None)
 
     # Configuration (env vars per docs/deployment.md, overridable via config_dict for tests)
     app.config['DATABASE_PATH'] = os.getenv('DATABASE_PATH', DATABASE_PATH)
@@ -51,6 +58,20 @@ def create_app(config_dict: dict = {}):
     # TODO(drawbridge): initialize SQLite schema (see docs/database.md)
     # with app.app_context():
     #     init_db(app)
+
+    # Serve the built Vue SPA. Registered last, but route order doesn't
+    # matter here — Werkzeug matches literal/blueprint routes like
+    # /api/lease-event ahead of this catch-all regardless of registration
+    # order. Falls back to index.html for any unrecognised path so Vue
+    # Router's client-side routes resolve on a hard refresh (see
+    # docs/frontend.md).
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_frontend(path):
+        target = FRONTEND_DIST / path
+        if path and target.is_file():
+            return send_from_directory(FRONTEND_DIST, path)
+        return send_from_directory(FRONTEND_DIST, 'index.html')
 
     app.logger.info(f"Finished creating Drawbridge app instance with log level {app.config['LOG_LEVEL']}")
 

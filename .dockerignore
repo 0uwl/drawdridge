@@ -3,3 +3,7 @@ CLAUDE.md
 .pytest_cache/
 .venv/
 docs/
+.git/
+frontend/node_modules/
+frontend/dist/
+drawbridge/static/

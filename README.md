@@ -28,6 +28,7 @@ provisioning, then dropped in favor of a retention-bounded provisioning log.
 | [Web API](docs/api.md) | Flask endpoints, the `/api/lease-event` contract, auth requirements |
 | [Database](docs/database.md) | SQLAlchemy schema, multi-worker SQLite concurrency, log retention |
 | [Authentication](docs/authentication.md) | Flask-Login, password hashing, planned SAML SP integration |
+| [Frontend](docs/frontend.md) | Vue/Vite admin UI, dev-server proxy workflow, how it's baked into the container |
 | [Kea Configuration](docs/kea.md) | Control Agent, DHCPv4 config, the `leases4_committed` hook |
 | [Deployment](docs/deployment.md) | Containerfile, Quadlet, dev setup, environment variables |
 | [Testing](docs/testing.md) | Testing approach and key cases |

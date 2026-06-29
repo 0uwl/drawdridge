@@ -217,3 +217,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 CLAUDE.md
+
+# Node / frontend (frontend/)
+frontend/node_modules/
+frontend/dist/
+
+# Built frontend baked into the Flask app at image build time (docs/frontend.md)
+drawbridge/static/

@@ -2,14 +2,19 @@
 
 ## Container
 
-**Containerfile** builds `localhost/drawbridge:latest`:
-- Base image: `python:3.12-slim`
-- Non-root user `drawbridge` (UID 1000) created in image
-- Gunicorn as WSGI server, binding `0.0.0.0:8080` (via `-c
-  drawbridge/gunicorn.conf.py` on the `CMD` — Gunicorn does not discover a
-  config file nested under a subdirectory on its own)
-- `/app/data` and `/app/scripts` are mount points — do not COPY content there
-- Root filesystem is read-only at runtime; `/tmp` and `/run` are tmpfs
+**Containerfile** builds `localhost/drawbridge:latest` as a multi-stage
+build:
+- Stage 1 (`node:22-slim`): builds the Vue frontend (`frontend/`) with
+  `npm ci && npm run build`. See [frontend.md](frontend.md).
+- Stage 2 (`python:3.12-slim`, the final image):
+  - Non-root user `drawbridge` (UID 1000) created in image
+  - `COPY --from=` pulls the built frontend assets from stage 1 into
+    `drawbridge/static/` — Node never ships in the final image
+  - Gunicorn as WSGI server, binding `0.0.0.0:8080` (via `-c
+    drawbridge/gunicorn.conf.py` on the `CMD` — Gunicorn does not discover a
+    config file nested under a subdirectory on its own)
+  - `/app/data` and `/app/scripts` are mount points — do not COPY content there
+  - Root filesystem is read-only at runtime; `/tmp` and `/run` are tmpfs
 
 **Quadlet** at `~/.config/containers/systemd/drawbridge.container` (as
 `drawbridge` user). See `quadlet/drawbridge.container` in this repo.
@@ -40,9 +45,14 @@ flask run --port 8080
 # Run tests
 pytest
 
-# Build the container image
+# Build the container image (multi-stage: builds frontend/, then the Flask image)
 podman build -t localhost/drawbridge:latest .
 ```
+
+The backend dev server above is enough on its own for API/backend work. For
+frontend work, run the Vite dev server alongside it instead of rebuilding
+the container on every change — see [frontend.md](frontend.md)
+("Development workflow").
 
 ## Environment Variables
 

@@ -91,7 +91,14 @@ drawbridge/
 ├── CLAUDE.md                  ← project index, links into docs/
 ├── README.md
 ├── docs/                      ← detailed design docs (this file and siblings)
-├── Containerfile              ← builds localhost/drawbridge:latest
+├── Containerfile              ← builds localhost/drawbridge:latest (multi-stage: builds frontend/, then the Flask image)
+├── frontend/                   ← Vue 3 + Vite admin UI, baked into drawbridge/static at build time (see frontend.md)
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── index.html
+│   └── src/
+│       ├── main.js
+│       └── App.vue
 ├── quadlet/
 │   └── drawbridge.container   ← Podman Quadlet for the drawbridge user
 ├── kea/
@@ -114,7 +121,8 @@ drawbridge/
 │   ├── auth.py                ← Flask-Login setup (LoginManager, user_loader,
 │   │                             password hashing); future home for the SAML
 │   │                             SP integration (see authentication.md)
-│   └── kea.py                 ← Kea Control Agent client (reservation-add/del)
+│   ├── kea.py                 ← Kea Control Agent client (reservation-add/del)
+│   └── static/                ← built frontend output (generated, gitignored — see frontend.md)
 ├── scripts/
 │   └── ztp-base.py            ← Base ZTP script served to IOS XE devices
 ├── tests/
