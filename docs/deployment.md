@@ -4,7 +4,7 @@
 
 **Containerfile** builds `localhost/drawbridge:latest`:
 - Base image: `python:3.12-slim`
-- Non-root user `appuser` (UID 1000) created in image
+- Non-root user `drawbridge` (UID 1000) created in image
 - Gunicorn as WSGI server, binding `0.0.0.0:8080` (via `-c
   drawbridge/gunicorn.conf.py` on the `CMD` — Gunicorn does not discover a
   config file nested under a subdirectory on its own)

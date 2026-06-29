@@ -32,9 +32,6 @@ def allowed_file(filename: str, allowed_extensions: set[str]) -> bool:
 
 def hash_file(filepath: str) -> str:
     """Compute the SHA-256 hash of a file on disk, read in chunks.
-
-    ZTP-2.0 uses SHA-256 (not the MD5 used in the 1.0 backend) per the
-    payload-verification requirement in docs/ZTP-2.0.md.
     """
     algorithm = hashlib.sha256()
 

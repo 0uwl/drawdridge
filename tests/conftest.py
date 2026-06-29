@@ -5,10 +5,8 @@ from drawbridge import create_app
 
 @pytest.fixture()
 def app(tmp_path):
-    """Per docs/testing.md: tests use a temporary SQLite file, never the
-    production /app/data/drawbridge.db. Ported from the ZTP 1.0 backend's app
-    fixture pattern (testing/conftest.py), swapped from Redis-clearing to a
-    tmp_path DB file.
+    """Tests use a temporary SQLite file, never the
+    production /app/drawbridge.db
     """
     config_dict = {
         'TESTING': True,

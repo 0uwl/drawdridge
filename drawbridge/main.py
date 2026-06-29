@@ -3,7 +3,7 @@ import os
 
 from flask import Flask, jsonify
 
-DATABASE_PATH = '/app/data/drawbridge.db'
+DATABASE_PATH = '/app/drawbridge.db'
 SCRIPTS_PATH = '/app/scripts'
 KEA_CTRL_URL = 'http://keahost:8081'
 KEA_SUBNET_ID = '1'
@@ -12,11 +12,7 @@ LOG_LEVEL = 'INFO'
 
 
 def create_app(config_dict: dict = {}):
-    """Flask app factory. Ported from the ZTP 1.0 backend's create_app() —
-    config loading, gunicorn logger wiring, and the /health check carry over
-    unchanged. Blueprint registration is intentionally empty: lease.py,
-    devices.py, and scripts.py (see docs/api.md) are new for
-    Drawbridge and still need to be designed/written.
+    """Flask app factory
     """
 
     app = Flask(__name__)
