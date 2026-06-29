@@ -44,3 +44,16 @@ pytest
 
 See [docs/deployment.md](docs/deployment.md) for running the app locally,
 building the container, and the full list of environment variables.
+
+## Development
+
+Don't `pip install` the `drawbridge` package itself — there's no
+`[build-system]` in `pyproject.toml`, and the inner `drawbridge/` directory
+isn't a valid setuptools project root on its own. Just run `pytest` from the
+repo root; `pythonpath = ["."]` under `[tool.pytest.ini_options]` in
+`pyproject.toml` puts the repo root on `sys.path` so `tests/conftest.py` can
+`import drawbridge` without an install.
+
+`scripts/dev.sh` starts a full frontend dev session (Flask backend + Vite
+dev server with HMR) in one command — see [docs/frontend.md](docs/frontend.md)
+for the manual two-terminal workflow it wraps.
