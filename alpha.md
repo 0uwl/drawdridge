@@ -37,7 +37,7 @@ test files, all real frontend views.
 
 ## Step-by-step
 
-### 1. Database layer
+### 1. Database layer (DONE)
 - `drawbridge/models.py`: `Device`, `ProvisioningLog`, `Setting`, `User`
   exactly per [docs/database.md](docs/database.md) schema.
 - `drawbridge/db.py`: SQLAlchemy `Engine`/`sessionmaker`, `init_db(app)`
@@ -49,7 +49,7 @@ test files, all real frontend views.
 - Engine must be created inside `create_app()`, not at module import time
   (post-fork safety under Gunicorn — see decisions.md).
 
-### 2. Auth foundation
+### 2. Auth foundation (DONE)
 - `drawbridge/auth.py`: `LoginManager` setup, `user_loader`, password hashing
   via Werkzeug (`generate_password_hash`/`check_password_hash`).
 - **First-admin bootstrap**, triggered from `init_db(app)` in `db.py`: check

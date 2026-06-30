@@ -1,9 +1,11 @@
 import logging
 import os
+import secrets
 from pathlib import Path
 
 from flask import Flask, jsonify, send_from_directory
 
+from drawbridge.auth import init_login_manager
 from drawbridge.db import init_db
 
 DATABASE_PATH = '/app/data/drawbridge.db'
@@ -38,12 +40,28 @@ def create_app(config_dict: dict = {}):
     app.config['TESTING'] = os.getenv('TESTING', False)
     app.config['SQLITE_BUSY_TIMEOUT_MS'] = int(os.getenv('SQLITE_BUSY_TIMEOUT_MS', SQLITE_BUSY_TIMEOUT_MS))
     app.config['LOG_RETENTION_DAYS'] = os.getenv('LOG_RETENTION_DAYS', LOG_RETENTION_DAYS)
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # no default — see check below
 
     if config_dict:
         app.config.update(config_dict)
 
     if app.testing:
         app.config['LOG_LEVEL'] = 'DEBUG'
+
+    if app.config['SECRET_KEY'] is None:
+        if app.testing:
+            # Ephemeral, this-process-only key. Fine for tests (one app
+            # instance, no other worker needs to agree on it). Production
+            # must set SECRET_KEY explicitly: each Gunicorn worker calls
+            # create_app() independently post-fork (see db.py), so without
+            # a shared env var every worker would sign session cookies with
+            # a different key and sessions would randomly invalidate
+            # depending on which worker handles the next request.
+            app.config['SECRET_KEY'] = secrets.token_hex(32)
+        else:
+            raise RuntimeError(
+                'SECRET_KEY environment variable must be set — see docs/deployment.md'
+            )
 
     # Logger — gunicorn owns the handlers in production
     gunicorn_logger = logging.getLogger('gunicorn.error')
@@ -60,6 +78,8 @@ def create_app(config_dict: dict = {}):
     # app.register_blueprint(lease.create_blueprint(), url_prefix='/api')
     # app.register_blueprint(devices.create_blueprint(), url_prefix='/api/devices')
     # app.register_blueprint(scripts.create_blueprint(), url_prefix='/scripts')
+
+    init_login_manager(app)
 
     with app.app_context():
         init_db(app)
