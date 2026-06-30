@@ -58,7 +58,7 @@ the container on every change — see [frontend.md](frontend.md)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_PATH` | `/app/data/ztp.db` | SQLite database file path |
+| `DATABASE_PATH` | `/app/data/drawbridge.db` | SQLite database file path |
 | `SCRIPTS_PATH` | `/app/scripts` | Directory containing ZTP scripts to serve |
 | `KEA_CTRL_URL` | `http://keahost:8081` | Kea Control Agent base URL |
 | `KEA_SUBNET_ID` | `1` | Kea subnet ID for reservation commands |

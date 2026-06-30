@@ -4,12 +4,16 @@ from pathlib import Path
 
 from flask import Flask, jsonify, send_from_directory
 
-DATABASE_PATH = '/app/drawbridge.db'
+from drawbridge.db import init_db
+
+DATABASE_PATH = '/app/data/drawbridge.db'
 SCRIPTS_PATH = '/app/scripts'
 KEA_CTRL_URL = 'http://keahost:8081'
 KEA_SUBNET_ID = '1'
 LEASE_EVENT_TIMEOUT = '2'
 LOG_LEVEL = 'INFO'
+SQLITE_BUSY_TIMEOUT_MS = '1000'
+LOG_RETENTION_DAYS = '30'
 
 # Built Vue SPA (frontend/, baked in at image build time — see
 # docs/frontend.md). static_folder is disabled below so Flask doesn't
@@ -32,6 +36,8 @@ def create_app(config_dict: dict = {}):
     app.config['LEASE_EVENT_TIMEOUT'] = float(os.getenv('LEASE_EVENT_TIMEOUT', LEASE_EVENT_TIMEOUT))
     app.config['LOG_LEVEL'] = os.getenv('LOG_LEVEL', LOG_LEVEL)
     app.config['TESTING'] = os.getenv('TESTING', False)
+    app.config['SQLITE_BUSY_TIMEOUT_MS'] = int(os.getenv('SQLITE_BUSY_TIMEOUT_MS', SQLITE_BUSY_TIMEOUT_MS))
+    app.config['LOG_RETENTION_DAYS'] = os.getenv('LOG_RETENTION_DAYS', LOG_RETENTION_DAYS)
 
     if config_dict:
         app.config.update(config_dict)
@@ -55,9 +61,8 @@ def create_app(config_dict: dict = {}):
     # app.register_blueprint(devices.create_blueprint(), url_prefix='/api/devices')
     # app.register_blueprint(scripts.create_blueprint(), url_prefix='/scripts')
 
-    # TODO(drawbridge): initialize SQLite schema (see docs/database.md)
-    # with app.app_context():
-    #     init_db(app)
+    with app.app_context():
+        init_db(app)
 
     # Serve the built Vue SPA. Registered last, but route order doesn't
     # matter here — Werkzeug matches literal/blueprint routes like
