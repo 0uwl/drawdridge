@@ -11,16 +11,16 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from drawbridge.models import UnprovisionedDevice, ProvisioningLog, Setting, User, utcnow_iso
+from drawbridge.models import Device, ProvisioningSession, ProvisioningLog, Setting, User, utcnow_iso
 
 # Device queries
 
-def get_device(session: Session, serial: str) -> UnprovisionedDevice | None:
-    return session.get(UnprovisionedDevice, serial)
+def get_device(session: Session, serial: str) -> Device | None:
+    return session.get(Device, serial)
 
 
-def list_devices(session: Session) -> list[UnprovisionedDevice]:
-    return list(session.scalars(select(UnprovisionedDevice).order_by(UnprovisionedDevice.added_at)).all())
+def list_devices(session: Session) -> list[Device]:
+    return list(session.scalars(select(Device).order_by(Device.added_at)).all())
 
 
 def add_device(
@@ -29,27 +29,84 @@ def add_device(
     serial: str,
     mac: str | None = None,
     description: str | None = None,
+    image: str | None = None,
+    config_file: str | None = None,
     added_by: str | None = None,
-) -> UnprovisionedDevice:
+) -> Device:
     """Idempotent on serial: re-registering an existing serial updates its
-    mutable fields instead of raising on the primary-key collision."""
-    device = session.get(UnprovisionedDevice, serial)
+    mutable fields instead of raising on the primary-key collision.
+
+    image and config_file fall back to the default_image / default_config_file
+    Setting rows on creation only — re-registration leaves them unchanged if
+    not explicitly provided."""
+    device = session.get(Device, serial)
     if device is not None:
         device.mac = mac
         device.description = description
         device.added_by = added_by
+        if image is not None:
+            device.image = image
+        if config_file is not None:
+            device.config_file = config_file
         return device
 
-    device = UnprovisionedDevice(serial=serial, mac=mac, description=description, added_by=added_by)
+    if image is None:
+        setting = get_setting(session, 'default_image')
+        if setting is not None:
+            image = setting.value
+    if config_file is None:
+        setting = get_setting(session, 'default_config_file')
+        if setting is not None:
+            config_file = setting.value
+
+    device = Device(serial=serial, mac=mac, description=description, image=image, config_file=config_file, added_by=added_by)
     session.add(device)
     return device
 
 
 def delete_device(session: Session, serial: str) -> bool:
-    device = session.get(UnprovisionedDevice, serial)
+    device = session.get(Device, serial)
     if device is None:
         return False
     session.delete(device)
+    return True
+
+
+# ProvisioningSession queries
+
+def list_sessions(session: Session) -> list[ProvisioningSession]:
+    return list(session.scalars(select(ProvisioningSession).order_by(ProvisioningSession.approved_at)).all())
+
+
+def get_provisioning_session(session: Session, serial: str) -> ProvisioningSession | None:
+    return session.get(ProvisioningSession, serial)
+
+
+def create_provisioning_session(
+    session: Session,
+    *,
+    serial: str,
+    mac: str | None = None,
+    ip: str | None = None,
+) -> ProvisioningSession:
+    """Idempotent on serial: IOS XE retries DHCP with alternating identifiers,
+    so the same device may hit /api/lease-event more than once per boot cycle.
+    Re-approving updates mac/ip rather than raising on the primary-key collision."""
+    ps = session.get(ProvisioningSession, serial)
+    if ps is not None:
+        ps.mac = mac
+        ps.ip = ip
+        return ps
+    ps = ProvisioningSession(serial=serial, mac=mac, ip=ip, state='lease_approved')
+    session.add(ps)
+    return ps
+
+
+def delete_provisioning_session(session: Session, serial: str) -> bool:
+    ps = session.get(ProvisioningSession, serial)
+    if ps is None:
+        return False
+    session.delete(ps)
     return True
 
 
@@ -123,4 +180,4 @@ def purge_expired_logs(session: Session, retention_days: str) -> None:
         return
 
     cutoff = (datetime.now(timezone.utc) - timedelta(days=int(retention_days))).isoformat(timespec='microseconds')
-    session.execute(delete(ProvisioningLog).where(ProvisioningLog.ts < cutoff))
+    session.execute(delete(ProvisioningLog).where(ProvisioningLog.timestamp < cutoff))

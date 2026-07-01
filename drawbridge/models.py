@@ -16,14 +16,17 @@ def utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec='microseconds')
 
 
-class UnprovisionedDevice(Base):
-    """Pre-provisioning allowlist only. A row exists from registration until
-    /api/provision-complete fires, at which point it is deleted"""
+class Device(Base):
+    """Operator-managed allowlist entry. Exists from registration through the
+    full ZTP lifecycle — not deleted on provisioning so a failed run can be
+    retried without re-registration. Operator must explicitly DELETE to remove."""
     __tablename__ = 'devices'
 
     serial: Mapped[str] = mapped_column(primary_key=True)
     mac: Mapped[str | None]
     description: Mapped[str | None]
+    image: Mapped[str | None]
+    config_file: Mapped[str | None]
     added_at: Mapped[str] = mapped_column(default=utcnow_iso)
     added_by: Mapped[str | None]
 
@@ -32,26 +35,66 @@ class UnprovisionedDevice(Base):
             'serial': self.serial,
             'mac': self.mac,
             'description': self.description,
+            'image': self.image,
+            'config_file': self.config_file,
             'added_at': self.added_at,
             'added_by': self.added_by,
         }
 
 
+class ProvisioningSession(Base):
+    """Transient record of an in-progress ZTP run. Created when /api/lease-event
+    approves a serial; deleted when /api/provision-complete fires (success or
+    failure). The Device allowlist row is not touched."""
+    __tablename__ = 'provisioning_sessions'
+
+    serial: Mapped[str] = mapped_column(primary_key=True)
+    mac: Mapped[str | None]
+    ip: Mapped[str | None]
+    image: Mapped[str | None]        # set when device reports at provision-complete
+    config_file: Mapped[str | None]  # set when device reports at provision-complete
+    state: Mapped[str]               # 'lease_approved', 'script_fetched', 'downloading',
+                                     # 'updating_software', 'rebooting', 'configuring'
+    approved_at: Mapped[str] = mapped_column(default=utcnow_iso)
+
+    def as_dict(self) -> dict:
+        return {
+            'serial': self.serial,
+            'mac': self.mac,
+            'ip': self.ip,
+            'image': self.image,
+            'config_file': self.config_file,
+            'state': self.state,
+            'approved_at': self.approved_at,
+        }
+
+
 class ProvisioningLog(Base):
-    """The durable record once a device leaves the `devices` table — covers
-    lease decisions and the eventual provisioning outcome. Subject to the
-    retention policy in Setting; purged once a row outlives it."""
+    """Archival record written when a device completes or fails provisioning
+    and its ProvisioningSession row is deleted. Subject to the retention policy in
+    Setting; purged once a row outlives it."""
     __tablename__ = 'provisioning_log'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     serial: Mapped[str]
-    event: Mapped[str]   # 'lease_approved', 'lease_denied',
-                          # 'provision_complete', 'provision_failed'
-    image: Mapped[str | None]         # image filename/version given (provision_complete only)
-    config_file: Mapped[str | None]   # config filename given (provision_complete only)
+    event: Mapped[str]               # 'provision_complete', 'provision_failed'
+    image: Mapped[str | None]
+    config_file: Mapped[str | None]
     ip: Mapped[str | None]
-    ts: Mapped[str] = mapped_column(default=utcnow_iso)
-    detail: Mapped[str | None]   # JSON blob for extra context
+    timestamp: Mapped[str] = mapped_column(default=utcnow_iso)
+    detail: Mapped[str | None]
+
+    def as_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'serial': self.serial,
+            'event': self.event,
+            'image': self.image,
+            'config_file': self.config_file,
+            'ip': self.ip,
+            'timestamp': self.timestamp,
+            'detail': self.detail,
+        }
 
 
 class Setting(Base):

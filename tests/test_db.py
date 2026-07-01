@@ -14,6 +14,40 @@ def test_init_db_seeds_log_retention_from_config(app):
         assert setting.value == app.config['LOG_RETENTION_DAYS']
 
 
+def test_init_db_seeds_default_image_when_configured(tmp_path):
+    app = create_app({
+        'TESTING': True,
+        'DATABASE_PATH': str(tmp_path / 'drawbridge.db'),
+        'DEFAULT_IMAGE': 'ios-xe-17.9.bin',
+    })
+    with app.app_context():
+        setting = get_session().get(Setting, 'default_image')
+        assert setting is not None
+        assert setting.value == 'ios-xe-17.9.bin'
+
+
+def test_init_db_does_not_seed_default_image_when_not_configured(app):
+    with app.app_context():
+        assert get_session().get(Setting, 'default_image') is None
+
+
+def test_init_db_seeds_default_config_file_when_configured(tmp_path):
+    app = create_app({
+        'TESTING': True,
+        'DATABASE_PATH': str(tmp_path / 'drawbridge.db'),
+        'DEFAULT_CONFIG_FILE': 'spine.cfg',
+    })
+    with app.app_context():
+        setting = get_session().get(Setting, 'default_config_file')
+        assert setting is not None
+        assert setting.value == 'spine.cfg'
+
+
+def test_init_db_does_not_seed_default_config_file_when_not_configured(app):
+    with app.app_context():
+        assert get_session().get(Setting, 'default_config_file') is None
+
+
 def test_init_db_bootstraps_exactly_one_admin_user(app):
     with app.app_context():
         session = get_session()

@@ -13,6 +13,8 @@
 | POST | `/api/devices` | Register a new device (serial + optional metadata) |
 | DELETE | `/api/devices/<serial>` | Remove a device from the allowlist |
 | GET | `/api/devices/<serial>` | Get a pending device's status (not history — see `/api/log`) |
+| GET | `/api/devices/sessions` | List all active provisioning sessions |
+| GET | `/api/devices/sessions/<serial>` | Get the active provisioning session for a device |
 | GET | `/scripts/<filename>` | Serve ZTP scripts to devices (HTTPS) |
 | POST | `/api/provision-complete` | Device reports provisioning outcome; deletes the `devices` row, writes a `ProvisioningLog` row |
 | GET | `/api/log` | List provisioning log entries (time, image, config file, outcome) within the retention window |

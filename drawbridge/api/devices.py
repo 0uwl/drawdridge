@@ -2,7 +2,7 @@ from flask import Blueprint, request
 from flask_login import current_user, login_required
 
 from drawbridge.db import get_session
-from drawbridge.queries import list_devices, add_device, get_device, delete_device
+from drawbridge.queries import list_devices, add_device, get_device, delete_device, get_provisioning_session, list_sessions
 from drawbridge.utils import error_response, success_response
 
 
@@ -23,12 +23,18 @@ def create_blueprint():
             case 'POST':
                 data = request.get_json(silent=True) or {}
                 serial = data.get('serial')
-                mac = data.get('mac', '')
-                description = data.get('description', 'No description')
                 if serial is None:
                     return error_response('Request body is missing required parameter serial', 'missing_parameter', code=422)
                 session = get_session()
-                add_device(session, serial=serial, mac=mac, description=description, added_by=current_user.username)
+                add_device(
+                    session,
+                    serial=serial,
+                    mac=data.get('mac'),
+                    description=data.get('description'),
+                    image=data.get('image'),
+                    config_file=data.get('config_file'),
+                    added_by=current_user.username,
+                )
                 session.commit()
                 return success_response(f'{serial} added')
             case _:
@@ -39,21 +45,40 @@ def create_blueprint():
     @login_required
     def device_actions(serial: str):
         session = get_session()
+        device = get_device(session, serial)
+        if device is None:
+            return error_response(f'{serial} not found', 'device_not_found', code=404)
+
         match (request.method):
             case 'GET':
-                device = get_device(session, serial)
-                if device is None:
-                    return error_response(f'{serial} not found', 'device_not_found', code=404)
                 return success_response(f'{serial} delivered', payload=device.as_dict())
 
             case 'DELETE':
-                success = delete_device(session, serial)
-                if not success:
-                    return error_response(f'{serial} not found', 'device_not_found', code=404)
+                if get_provisioning_session(session, serial) is not None:
+                    return error_response(
+                        f'{serial} has an active provisioning session and cannot be deleted',
+                        'active_session_exists',
+                        code=409,
+                    )
+                delete_device(session, serial)
                 session.commit()
                 return success_response(f'{serial} deleted')
 
             case _:
                 return error_response('Method not allowed', 'method_not_allowed', code=405, silent=True)
-            
+
+    @bp.get('/sessions')
+    @bp.get('/sessions/<string:serial>')
+    @login_required
+    def sessions(serial=None):
+        db_session = get_session()
+        if serial is not None:
+            ztp_session = get_provisioning_session(db_session, serial)
+            if ztp_session is None:
+                return error_response(f'Session for {serial} not found', 'session_not_found', code=404)
+            return success_response(f'Session for {serial}', payload=ztp_session.as_dict())
+        else:
+            ztp_sessions = list_sessions(db_session)
+            return success_response('Active sessions', payload=[s.as_dict() for s in ztp_sessions])
+
     return bp

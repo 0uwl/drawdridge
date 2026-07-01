@@ -20,6 +20,8 @@ LEASE_EVENT_TIMEOUT = '2'
 LOG_LEVEL = 'INFO'
 SQLITE_BUSY_TIMEOUT_MS = '1000'
 LOG_RETENTION_DAYS = '30'
+DEFAULT_IMAGE = None
+DEFAULT_CONFIG_FILE = None
 
 # Built Vue SPA (frontend/, baked in at image build time — see
 # docs/frontend.md). static_folder is disabled below so Flask doesn't
@@ -46,6 +48,8 @@ def create_app(config_dict: dict = {}):
     app.config['LOG_RETENTION_DAYS'] = os.getenv('LOG_RETENTION_DAYS', LOG_RETENTION_DAYS)
     app.config['KEA_HOOK_API_KEY'] = os.getenv('KEA_HOOK_API_KEY', KEA_HOOK_API_KEY)
     app.config['KEA_SKIP_AUTH'] = bool(os.getenv('KEA_SKIP_AUTH', ''))
+    app.config['DEFAULT_IMAGE'] = os.getenv('DEFAULT_IMAGE', DEFAULT_IMAGE)
+    app.config['DEFAULT_CONFIG_FILE'] = os.getenv('DEFAULT_CONFIG_FILE', DEFAULT_CONFIG_FILE)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # no default — see check below
 
     if config_dict:
@@ -85,6 +89,9 @@ def create_app(config_dict: dict = {}):
     from drawbridge.api import devices
     app.register_blueprint(devices.create_blueprint(), url_prefix=f'{URL_PREFIX}/devices')
     app.logger.debug("Registered Blueprint 'devices.py'")
+    from drawbridge.api import leases
+    app.register_blueprint(leases.create_blueprint(), url_prefix=f'{URL_PREFIX}')
+    app.logger.debug("Registered Blueprint 'leases.py'")
 
     # TODO(drawbridge): register remaining blueprints as they are written
     # from drawbridge.api import lease, ztp, users, settings

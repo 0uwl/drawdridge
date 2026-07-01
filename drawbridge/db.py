@@ -31,6 +31,8 @@ def init_db(app):
 
     with session_factory() as session:
         _seed_log_retention(session, app)
+        _seed_default_image(session, app)
+        _seed_default_config_file(session, app)
         if is_first_run:
             _bootstrap_admin(session)
         session.commit()
@@ -107,6 +109,18 @@ def _seed_log_retention(session, app):
             key='log_retention_days',
             value=app.config['LOG_RETENTION_DAYS'],
         ))
+
+
+def _seed_default_image(session, app):
+    value = app.config['DEFAULT_IMAGE']
+    if value is not None and session.get(Setting, 'default_image') is None:
+        session.add(Setting(key='default_image', value=value))
+
+
+def _seed_default_config_file(session, app):
+    value = app.config['DEFAULT_CONFIG_FILE']
+    if value is not None and session.get(Setting, 'default_config_file') is None:
+        session.add(Setting(key='default_config_file', value=value))
 
 
 def _bootstrap_admin(session):
