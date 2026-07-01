@@ -29,9 +29,13 @@ Every `/api/devices`, `/api/log`, `/api/users`, `/api/settings/*`, and
 `/scripts/<filename>` (management, not the device's own fetch) route
 requires an authenticated session via `@login_required` — see
 [authentication.md](authentication.md). `/api/lease-event` and
-`/api/provision-complete` are called by Kea/devices, not operators, and stay
-unauthenticated — they're only reachable from the isolated provisioning
-VLAN/loopback per the threat model in [architecture.md](architecture.md).
+`/api/provision-complete` are called by Kea/devices, not operators. The
+primary security boundary is network isolation (provisioning VLAN/loopback —
+see [architecture.md](architecture.md)). `/api/lease-event` additionally
+enforces origin-based access control via the `kea_endpoint` decorator:
+loopback callers are always allowed; non-loopback callers require a Bearer
+token matching `KEA_HOOK_API_KEY` unless `KEA_SKIP_AUTH` is set. See
+[deployment.md](deployment.md) for configuration.
 
 ## `/api/lease-event` contract
 

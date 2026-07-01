@@ -1,3 +1,6 @@
+from functools import wraps
+
+from flask import current_app, request
 from flask_login import LoginManager
 
 from drawbridge.db import get_session
@@ -5,6 +8,33 @@ from drawbridge.queries import get_user_by_id
 from drawbridge.utils import error_response
 
 login_manager = LoginManager()
+
+
+def kea_endpoint(f):
+    """Restricts access to Kea-facing endpoints (e.g. /api/lease-event).
+
+    Local callers (127.0.0.1, ::1) are always allowed — same-host Kea needs
+    no key. Non-local callers must present a matching Bearer token via
+    KEA_HOOK_API_KEY; if the key is unset in config, non-local requests are
+    rejected outright (fail closed rather than silently open)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if current_app.config.get('KEA_SKIP_AUTH'):
+            return f(*args, **kwargs)
+
+        if request.remote_addr in ('127.0.0.1', '::1'):
+            return f(*args, **kwargs)
+
+        api_key = current_app.config.get('KEA_HOOK_API_KEY')
+        if not api_key:
+            return error_response('Forbidden', 'forbidden', code=403, silent=True)
+
+        auth = request.headers.get('Authorization', '')
+        if not auth.startswith('Bearer ') or auth[7:] != api_key:
+            return error_response('Forbidden', 'forbidden', code=403, silent=True)
+
+        return f(*args, **kwargs)
+    return decorated
 
 
 def init_login_manager(app):

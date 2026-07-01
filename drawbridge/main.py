@@ -16,6 +16,8 @@ LEASE_EVENT_TIMEOUT = '2'
 LOG_LEVEL = 'INFO'
 SQLITE_BUSY_TIMEOUT_MS = '1000'
 LOG_RETENTION_DAYS = '30'
+KEA_HOOK_API_KEY = None
+KEA_SKIP_AUTH = False
 
 # Built Vue SPA (frontend/, baked in at image build time — see
 # docs/frontend.md). static_folder is disabled below so Flask doesn't
@@ -40,6 +42,8 @@ def create_app(config_dict: dict = {}):
     app.config['TESTING'] = os.getenv('TESTING', False)
     app.config['SQLITE_BUSY_TIMEOUT_MS'] = int(os.getenv('SQLITE_BUSY_TIMEOUT_MS', SQLITE_BUSY_TIMEOUT_MS))
     app.config['LOG_RETENTION_DAYS'] = os.getenv('LOG_RETENTION_DAYS', LOG_RETENTION_DAYS)
+    app.config['KEA_HOOK_API_KEY'] = os.getenv('KEA_HOOK_API_KEY', KEA_HOOK_API_KEY)
+    app.config['KEA_SKIP_AUTH'] = bool(os.getenv('KEA_SKIP_AUTH', ''))
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # no default — see check below
 
     if config_dict:
