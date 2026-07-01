@@ -86,6 +86,7 @@ def test_add_device_persists_to_db(app, logged_in_client):
         'description': 'Edge router',
         'image': 'ios-xe-17.9.bin',
         'config_file': 'spine.cfg',
+        'script': 'ztp-spine.py',
     })
     with app.app_context():
         d = get_session().get(Device, 'FJC2517X0AB')
@@ -94,6 +95,7 @@ def test_add_device_persists_to_db(app, logged_in_client):
         assert d.description == 'Edge router'
         assert d.image == 'ios-xe-17.9.bin'
         assert d.config_file == 'spine.cfg'
+        assert d.script == 'ztp-spine.py'
 
 
 def test_add_device_sets_added_by_to_current_user(app, logged_in_client, user):
@@ -140,6 +142,32 @@ def test_add_device_explicit_image_overrides_default(app, logged_in_client):
     with app.app_context():
         d = get_session().get(Device, 'FJC2517X0AB')
         assert d.image == 'ios-xe-custom.bin'
+
+
+def test_add_device_uses_default_script_when_not_provided(app, logged_in_client):
+    with app.app_context():
+        session = get_session()
+        session.add(Setting(key='default_script', value='ztp-base.py'))
+        session.commit()
+
+    logged_in_client.post(f'{BASE}/devices/', json={'serial': 'FJC2517X0AB'})
+
+    with app.app_context():
+        d = get_session().get(Device, 'FJC2517X0AB')
+        assert d.script == 'ztp-base.py'
+
+
+def test_add_device_explicit_script_overrides_default(app, logged_in_client):
+    with app.app_context():
+        session = get_session()
+        session.add(Setting(key='default_script', value='ztp-base.py'))
+        session.commit()
+
+    logged_in_client.post(f'{BASE}/devices/', json={'serial': 'FJC2517X0AB', 'script': 'ztp-spine.py'})
+
+    with app.app_context():
+        d = get_session().get(Device, 'FJC2517X0AB')
+        assert d.script == 'ztp-spine.py'
 
 
 def test_add_device_is_idempotent_on_serial(app, logged_in_client, device):

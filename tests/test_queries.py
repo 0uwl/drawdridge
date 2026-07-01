@@ -29,13 +29,14 @@ def test_add_device_is_idempotent_on_serial(session):
     assert devices[0].description == 'second'
 
 
-def test_add_device_stores_image_and_config_file(session):
-    queries.add_device(session, serial='SN1', image='ios-xe-17.9.bin', config_file='spine.cfg')
+def test_add_device_stores_image_config_file_and_script(session):
+    queries.add_device(session, serial='SN1', image='ios-xe-17.9.bin', config_file='spine.cfg', script='ztp-spine.py')
     session.commit()
 
     device = queries.get_device(session, 'SN1')
     assert device.image == 'ios-xe-17.9.bin'
     assert device.config_file == 'spine.cfg'
+    assert device.script == 'ztp-spine.py'
 
 
 def test_add_device_uses_default_image_from_setting(session):
@@ -68,6 +69,26 @@ def test_add_device_explicit_image_overrides_default(session):
     assert queries.get_device(session, 'SN1').image == 'ios-xe-custom.bin'
 
 
+def test_add_device_uses_default_script_from_setting(session):
+    session.add(Setting(key='default_script', value='ztp-base.py'))
+    session.commit()
+
+    queries.add_device(session, serial='SN1')
+    session.commit()
+
+    assert queries.get_device(session, 'SN1').script == 'ztp-base.py'
+
+
+def test_add_device_explicit_script_overrides_default(session):
+    session.add(Setting(key='default_script', value='ztp-base.py'))
+    session.commit()
+
+    queries.add_device(session, serial='SN1', script='ztp-spine.py')
+    session.commit()
+
+    assert queries.get_device(session, 'SN1').script == 'ztp-spine.py'
+
+
 def test_add_device_reregistration_preserves_image_when_not_provided(session):
     queries.add_device(session, serial='SN1', image='ios-xe-17.9.bin')
     session.commit()
@@ -86,6 +107,26 @@ def test_add_device_reregistration_updates_image_when_provided(session):
     session.commit()
 
     assert queries.get_device(session, 'SN1').image == 'ios-xe-17.12.bin'
+
+
+def test_add_device_reregistration_preserves_script_when_not_provided(session):
+    queries.add_device(session, serial='SN1', script='ztp-spine.py')
+    session.commit()
+
+    queries.add_device(session, serial='SN1', mac='aa:bb')
+    session.commit()
+
+    assert queries.get_device(session, 'SN1').script == 'ztp-spine.py'
+
+
+def test_add_device_reregistration_updates_script_when_provided(session):
+    queries.add_device(session, serial='SN1', script='ztp-spine.py')
+    session.commit()
+
+    queries.add_device(session, serial='SN1', script='ztp-leaf.py')
+    session.commit()
+
+    assert queries.get_device(session, 'SN1').script == 'ztp-leaf.py'
 
 
 def test_delete_device(session):

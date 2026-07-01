@@ -78,7 +78,7 @@ before any tests:
 2. (DONE) `devices.py` — `GET/POST /api/devices`, `GET/DELETE /api/devices/<serial>`.
    POST is idempotent on re-registering the same serial. DELETE calls
    `reservation-del` via `drawbridge/kea.py`.
-3. `lease.py` — `POST /api/lease-event`. The core security gate: known serial
+3. (DONE) `lease.py` — `POST /api/lease-event`. The core security gate: known serial
    → 200 + `reservation-add` confirmation; unknown → 403; Kea Control Agent
    unreachable on approval path → fail closed (non-200). Must stay inside the
    2s `LEASE_EVENT_TIMEOUT` budget — keep the transaction short.

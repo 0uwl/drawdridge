@@ -19,6 +19,7 @@ class Device(Base):
     description: Mapped[str | None]
     image: Mapped[str | None]        # falls back to default_image Setting on creation
     config_file: Mapped[str | None]  # falls back to default_config_file Setting on creation
+    script: Mapped[str | None]       # falls back to default_script Setting on creation
     added_at: Mapped[str]
     added_by: Mapped[str | None]
 

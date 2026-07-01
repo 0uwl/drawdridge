@@ -33,6 +33,7 @@ def create_blueprint():
                     description=data.get('description'),
                     image=data.get('image'),
                     config_file=data.get('config_file'),
+                    script=data.get('script'),
                     added_by=current_user.username,
                 )
                 session.commit()
@@ -73,12 +74,12 @@ def create_blueprint():
     def sessions(serial=None):
         db_session = get_session()
         if serial is not None:
-            ztp_session = get_provisioning_session(db_session, serial)
-            if ztp_session is None:
+            active = get_provisioning_session(db_session, serial)
+            if active is None:
                 return error_response(f'Session for {serial} not found', 'session_not_found', code=404)
-            return success_response(f'Session for {serial}', payload=ztp_session.as_dict())
+            return success_response(f'Session for {serial}', payload=active.as_dict())
         else:
-            ztp_sessions = list_sessions(db_session)
-            return success_response('Active sessions', payload=[s.as_dict() for s in ztp_sessions])
+            active_sessions = list_sessions(db_session)
+            return success_response('Active sessions', payload=[s.as_dict() for s in active_sessions])
 
     return bp

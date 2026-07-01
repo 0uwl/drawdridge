@@ -31,14 +31,15 @@ def add_device(
     description: str | None = None,
     image: str | None = None,
     config_file: str | None = None,
+    script: str | None = None,
     added_by: str | None = None,
 ) -> Device:
     """Idempotent on serial: re-registering an existing serial updates its
     mutable fields instead of raising on the primary-key collision.
 
-    image and config_file fall back to the default_image / default_config_file
-    Setting rows on creation only — re-registration leaves them unchanged if
-    not explicitly provided."""
+    image, config_file, and script fall back to their default_* Setting rows
+    on creation only — re-registration leaves them unchanged if not explicitly
+    provided."""
     device = session.get(Device, serial)
     if device is not None:
         device.mac = mac
@@ -48,6 +49,8 @@ def add_device(
             device.image = image
         if config_file is not None:
             device.config_file = config_file
+        if script is not None:
+            device.script = script
         return device
 
     if image is None:
@@ -58,8 +61,12 @@ def add_device(
         setting = get_setting(session, 'default_config_file')
         if setting is not None:
             config_file = setting.value
+    if script is None:
+        setting = get_setting(session, 'default_script')
+        if setting is not None:
+            script = setting.value
 
-    device = Device(serial=serial, mac=mac, description=description, image=image, config_file=config_file, added_by=added_by)
+    device = Device(serial=serial, mac=mac, description=description, image=image, config_file=config_file, script=script, added_by=added_by)
     session.add(device)
     return device
 

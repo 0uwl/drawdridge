@@ -27,6 +27,7 @@ class Device(Base):
     description: Mapped[str | None]
     image: Mapped[str | None]
     config_file: Mapped[str | None]
+    script: Mapped[str | None]
     added_at: Mapped[str] = mapped_column(default=utcnow_iso)
     added_by: Mapped[str | None]
 
@@ -37,6 +38,7 @@ class Device(Base):
             'description': self.description,
             'image': self.image,
             'config_file': self.config_file,
+            'script': self.script,
             'added_at': self.added_at,
             'added_by': self.added_by,
         }
