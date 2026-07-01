@@ -8,16 +8,18 @@ from flask import Flask, jsonify, send_from_directory
 from drawbridge.auth import init_login_manager
 from drawbridge.db import init_db
 
+API_VERSION=1
+URL_PREFIX=f'/api/v{API_VERSION}'
 DATABASE_PATH = '/app/data/drawbridge.db'
 SCRIPTS_PATH = '/app/scripts'
 KEA_CTRL_URL = 'http://keahost:8081'
 KEA_SUBNET_ID = '1'
+KEA_HOOK_API_KEY = None
+KEA_SKIP_AUTH = False
 LEASE_EVENT_TIMEOUT = '2'
 LOG_LEVEL = 'INFO'
 SQLITE_BUSY_TIMEOUT_MS = '1000'
 LOG_RETENTION_DAYS = '30'
-KEA_HOOK_API_KEY = None
-KEA_SKIP_AUTH = False
 
 # Built Vue SPA (frontend/, baked in at image build time — see
 # docs/frontend.md). static_folder is disabled below so Flask doesn't
@@ -78,10 +80,14 @@ def create_app(config_dict: dict = {}):
         return jsonify({'status': 'healthy'}), 200
 
     from drawbridge.api import auth
-    app.register_blueprint(auth.create_blueprint(), url_prefix='/api')
+    app.register_blueprint(auth.create_blueprint(), url_prefix=f'{URL_PREFIX}/auth')
+    app.logger.debug("Registered Blueprint 'auth.py'")
+    from drawbridge.api import devices
+    app.register_blueprint(devices.create_blueprint(), url_prefix=f'{URL_PREFIX}/devices')
+    app.logger.debug("Registered Blueprint 'devices.py'")
 
     # TODO(drawbridge): register remaining blueprints as they are written
-    # from drawbridge.api import devices, lease, ztp, users, settings
+    # from drawbridge.api import lease, ztp, users, settings
 
     init_login_manager(app)
 

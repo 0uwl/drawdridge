@@ -73,9 +73,9 @@ Build and register in this order, each with its tests immediately after
 (per [docs/testing.md](docs/testing.md)) rather than batching all routes
 before any tests:
 
-1. `auth.py` — `POST /api/auth/login`, `POST /api/auth/logout`,
+1. (DONE) `auth.py` — `POST /api/auth/login`, `POST /api/auth/logout`,
    `GET /api/auth/me`.
-2. `devices.py` — `GET/POST /api/devices`, `GET/DELETE /api/devices/<serial>`.
+2. (DONE) `devices.py` — `GET/POST /api/devices`, `GET/DELETE /api/devices/<serial>`.
    POST is idempotent on re-registering the same serial. DELETE calls
    `reservation-del` via `drawbridge/kea.py`.
 3. `lease.py` — `POST /api/lease-event`. The core security gate: known serial

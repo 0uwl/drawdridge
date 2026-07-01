@@ -27,6 +27,15 @@ class UnprovisionedDevice(Base):
     added_at: Mapped[str] = mapped_column(default=utcnow_iso)
     added_by: Mapped[str | None]
 
+    def as_dict(self) -> dict:
+        return {
+            'serial': self.serial,
+            'mac': self.mac,
+            'description': self.description,
+            'added_at': self.added_at,
+            'added_by': self.added_by,
+        }
+
 
 class ProvisioningLog(Base):
     """The durable record once a device leaves the `devices` table — covers

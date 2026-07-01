@@ -8,10 +8,13 @@ from drawbridge.queries import get_user_by_username
 from drawbridge.utils import error_response, success_response
 
 
-def create_blueprint():
-    bp = Blueprint('auth', __name__)
+# NOTE: URL prefixes are defined and appended to the following routes when this blueprint is registered in main.py.
+#       They should not be defined here
 
-    @bp.post('/auth/login')
+def create_blueprint():
+    bp = Blueprint(name='auth', import_name= __name__)
+
+    @bp.post('/login')
     def login():
         data = request.get_json(silent=True) or {}
         username = data.get('username', '').strip()
@@ -34,13 +37,13 @@ def create_blueprint():
         login_user(user)
         return success_response('Logged in', payload=_user_payload(user))
 
-    @bp.post('/auth/logout')
+    @bp.post('/logout')
     @login_required
     def logout():
         logout_user()
         return success_response('Logged out')
 
-    @bp.get('/auth/me')
+    @bp.get('/me')
     @login_required
     def me():
         return success_response('Authenticated', payload=_user_payload(current_user))
