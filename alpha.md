@@ -63,7 +63,7 @@ test files, all real frontend views.
   This only ever fires on the missing-DB-file path, never on subsequent
   starts against an existing DB.
 
-### 3. Kea Control Agent client
+### 3. Kea Control Agent client (DONE)
 - `drawbridge/kea.py`: thin client for `reservation-add`/`reservation-del`
   against `KEA_CTRL_URL`/`KEA_SUBNET_ID`. Fail closed on unreachable/error
   responses (raise, don't swallow) — callers decide the HTTP response.
