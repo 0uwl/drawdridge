@@ -9,9 +9,9 @@ from drawbridge.auth import init_login_manager
 from drawbridge.db import init_db
 
 API_VERSION=1
-URL_PREFIX=f'/api/v{API_VERSION}'
+API_PREFIX=f'/api/v{API_VERSION}'
 DATABASE_PATH = '/app/data/drawbridge.db'
-SCRIPTS_PATH = '/app/scripts'
+FILES_PATH = '/app/files'
 KEA_CTRL_URL = 'http://keahost:8081'
 KEA_SUBNET_ID = '1'
 KEA_HOOK_API_KEY = None
@@ -39,7 +39,7 @@ def create_app(config_dict: dict = {}):
 
     # Configuration (env vars per docs/deployment.md, overridable via config_dict for tests)
     app.config['DATABASE_PATH'] = os.getenv('DATABASE_PATH', DATABASE_PATH)
-    app.config['SCRIPTS_PATH'] = os.getenv('SCRIPTS_PATH', SCRIPTS_PATH)
+    app.config['FILES_PATH'] = os.getenv('FILES_PATH', FILES_PATH)
     app.config['KEA_CTRL_URL'] = os.getenv('KEA_CTRL_URL', KEA_CTRL_URL)
     app.config['KEA_SUBNET_ID'] = os.getenv('KEA_SUBNET_ID', KEA_SUBNET_ID)
     app.config['LEASE_EVENT_TIMEOUT'] = float(os.getenv('LEASE_EVENT_TIMEOUT', LEASE_EVENT_TIMEOUT))
@@ -86,17 +86,26 @@ def create_app(config_dict: dict = {}):
         return jsonify({'status': 'healthy'}), 200
 
     from drawbridge.api import auth
-    app.register_blueprint(auth.create_blueprint(), url_prefix=f'{URL_PREFIX}/auth')
+    app.register_blueprint(auth.create_blueprint(), url_prefix=f'{API_PREFIX}/auth')
     app.logger.debug("Registered Blueprint 'auth.py'")
+    
     from drawbridge.api import devices
-    app.register_blueprint(devices.create_blueprint(), url_prefix=f'{URL_PREFIX}/devices')
+    app.register_blueprint(devices.create_blueprint(), url_prefix=f'{API_PREFIX}/devices')
     app.logger.debug("Registered Blueprint 'devices.py'")
+
     from drawbridge.api import leases
-    app.register_blueprint(leases.create_blueprint(), url_prefix=f'{URL_PREFIX}')
+    app.register_blueprint(leases.create_blueprint(), url_prefix=f'{API_PREFIX}')
     app.logger.debug("Registered Blueprint 'leases.py'")
 
+    from drawbridge.api import files
+    app.register_blueprint(files.create_blueprint(), url_prefix=f'/files')
+    app.logger.debug("Registered Blueprint 'files.py'")
+
     # TODO(drawbridge): register remaining blueprints as they are written
-    # from drawbridge.api import lease, ztp, users, settings
+    # from drawbridge.api import users, settings
+
+    for subdir in ('images', 'configs', 'scripts'):
+        os.makedirs(os.path.join(app.config['FILES_PATH'], subdir), exist_ok=True)
 
     init_login_manager(app)
 

@@ -56,6 +56,21 @@ class ProvisioningLog(Base):
     detail: Mapped[str | None]
 
 
+class ZTPFile(Base):
+    """Metadata record for every file managed by Drawbridge. The file itself
+    lives on disk under FILES_PATH/<type>/; this row tracks its type, size,
+    and SHA-256 so the UI and devices can verify integrity. Composite PK on
+    (file_type, filename) — the same filename may exist under different types."""
+    __tablename__ = 'ztp_files'
+
+    file_type:   Mapped[str] = mapped_column(primary_key=True)  # 'image', 'config', 'script'
+    filename:    Mapped[str] = mapped_column(primary_key=True)
+    size_bytes:  Mapped[int]
+    sha256:      Mapped[str]
+    uploaded_at: Mapped[str]
+    uploaded_by: Mapped[str | None]
+
+
 class Setting(Base):
     """Small admin-configurable key/value store. First row of interest:
     key='log_retention_days', value='30' (or 'indefinite')."""

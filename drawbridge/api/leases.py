@@ -45,9 +45,10 @@ def create_blueprint():
 
         return success_response(f'{serial} approved', payload=device.as_dict())
 
-    @bp.post('/provision-complete')
+    @bp.route('/provision-complete', methods=['PUT', 'POST'])
     def provision_complete():
-        data = request.get_json()
+        # force=True: IOS XE `copy` sends PUT without Content-Type: application/json
+        data = request.get_json(force=True, silent=True)
         if data is None:
             return error_response('Empty request body', 'empty_request_body', code=422)
 

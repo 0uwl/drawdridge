@@ -82,14 +82,14 @@ before any tests:
    → 200 + `reservation-add` confirmation; unknown → 403; Kea Control Agent
    unreachable on approval path → fail closed (non-200). Must stay inside the
    2s `LEASE_EVENT_TIMEOUT` budget — keep the transaction short.
-4. `ztp.py` — `GET /scripts/<filename>` (unauthenticated device-facing
-   fetch) and the authenticated management variant for script upload/listing.
    `POST /api/provision-complete` (device reports outcome; deletes the
    `devices` row, writes `ProvisioningLog`).
+4. (DONE) `files.py` — `GET /scripts/<filename>`, `GET /images/<filename>`, `GET /configs/<filename>` (unauthenticated device-facing
+   fetch), the authenticated management variant for file upload/listing.
 5. `users.py` — admin-only CRUD for operator accounts.
 6. `settings.py` — `GET/PUT /api/settings/log-retention`, admin-only on PUT.
    Wire the lazy-purge-on-insert logic here and into the `ProvisioningLog`
-   insert path used by `lease.py`/`ztp.py`.
+   insert path used by `lease.py`/`files.py`.
 
 Register all blueprints in `create_app()` (the TODO already marks where) and
 apply `@login_required` per the matrix in [docs/api.md](docs/api.md) — only

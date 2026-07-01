@@ -17,6 +17,7 @@ def app(tmp_path):
     config_dict = {
         'TESTING': True,
         'DATABASE_PATH': str(tmp_path / 'drawbridge-test.db'),
+        'FILES_PATH': str(tmp_path / 'files'),
     }
 
     app = create_app(config_dict)

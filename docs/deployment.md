@@ -13,7 +13,7 @@ build:
   - Gunicorn as WSGI server, binding `0.0.0.0:8080` (via `-c
     drawbridge/gunicorn.conf.py` on the `CMD` — Gunicorn does not discover a
     config file nested under a subdirectory on its own)
-  - `/app/data` and `/app/scripts` are mount points — do not COPY content there
+  - `/app/data` and `/app/files` are mount points — do not COPY content there
   - Root filesystem is read-only at runtime; `/tmp` and `/run` are tmpfs
 
 **Quadlet** at `~/.config/containers/systemd/drawbridge.container` (as
@@ -21,7 +21,7 @@ build:
 
 Host directories must exist before starting:
 ```bash
-sudo mkdir -p /srv/drawbridge/{data,scripts}
+sudo mkdir -p /srv/drawbridge/{data,files}
 sudo chown -R drawbridge:drawbridge /srv/drawbridge
 ```
 
@@ -37,9 +37,9 @@ pip install -r requirements.txt
 export FLASK_APP=drawbridge/main.py
 export FLASK_DEBUG=1
 export DATABASE_PATH=./dev-data/drawbridge.db
-export SCRIPTS_PATH=./scripts
+export FILES_PATH=./dev-data/files
 export KEA_CTRL_URL=http://localhost:8081   # or mock it
-mkdir -p dev-data
+mkdir -p dev-data/files
 flask run --port 8080
 
 # Run tests
@@ -59,7 +59,7 @@ the container on every change — see [frontend.md](frontend.md)
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATABASE_PATH` | `/app/data/drawbridge.db` | SQLite database file path |
-| `SCRIPTS_PATH` | `/app/scripts` | Directory containing ZTP scripts to serve |
+| `FILES_PATH` | `/app/files` | Root directory for managed files. Subdirectories `images/`, `configs/`, and `scripts/` are created automatically on startup and should each be bind-mounted to the host if granular control is needed |
 | `KEA_CTRL_URL` | `http://keahost:8081` | Kea Control Agent base URL |
 | `KEA_SUBNET_ID` | `1` | Kea subnet ID for reservation commands |
 | `LEASE_EVENT_TIMEOUT` | `2` | Seconds before Kea hook times out (fail closed) |

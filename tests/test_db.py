@@ -18,6 +18,7 @@ def test_init_db_seeds_default_image_when_configured(tmp_path):
     app = create_app({
         'TESTING': True,
         'DATABASE_PATH': str(tmp_path / 'drawbridge.db'),
+        'FILES_PATH': str(tmp_path / 'files'),
         'DEFAULT_IMAGE': 'ios-xe-17.9.bin',
     })
     with app.app_context():
@@ -35,6 +36,7 @@ def test_init_db_seeds_default_config_file_when_configured(tmp_path):
     app = create_app({
         'TESTING': True,
         'DATABASE_PATH': str(tmp_path / 'drawbridge.db'),
+        'FILES_PATH': str(tmp_path / 'files'),
         'DEFAULT_CONFIG_FILE': 'spine.cfg',
     })
     with app.app_context():
@@ -52,6 +54,7 @@ def test_init_db_seeds_default_script_when_configured(tmp_path):
     app = create_app({
         'TESTING': True,
         'DATABASE_PATH': str(tmp_path / 'drawbridge.db'),
+        'FILES_PATH': str(tmp_path / 'files'),
         'DEFAULT_SCRIPT': 'ztp-base.py',
     })
     with app.app_context():
@@ -79,18 +82,19 @@ def test_init_db_bootstraps_exactly_one_admin_user(app):
 def test_admin_bootstrap_password_is_printed_once(tmp_path, capsys):
     # built directly (not via the `app` fixture) so the bootstrap print
     # happens during this test's capsys-captured call phase, not fixture setup
-    create_app({'TESTING': True, 'DATABASE_PATH': str(tmp_path / 'drawbridge.db')})
+    create_app({'TESTING': True, 'DATABASE_PATH': str(tmp_path / 'drawbridge.db'), 'FILES_PATH': str(tmp_path / 'files')})
 
     assert "created initial admin user 'admin'" in capsys.readouterr().out
 
 
 def test_init_db_does_not_rebootstrap_an_existing_database(tmp_path, capsys):
     db_path = str(tmp_path / 'drawbridge.db')
+    files_path = str(tmp_path / 'files')
 
-    create_app({'TESTING': True, 'DATABASE_PATH': db_path})
+    create_app({'TESTING': True, 'DATABASE_PATH': db_path, 'FILES_PATH': files_path})
     capsys.readouterr()  # discard the first run's printed password
 
-    app2 = create_app({'TESTING': True, 'DATABASE_PATH': db_path})
+    app2 = create_app({'TESTING': True, 'DATABASE_PATH': db_path, 'FILES_PATH': files_path})
 
     assert "created initial admin user" not in capsys.readouterr().out
     with app2.app_context():

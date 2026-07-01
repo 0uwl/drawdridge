@@ -72,7 +72,9 @@ Provisioning VLAN
 5. On 200: Kea unparks, sends DHCPACK with Option 67 URL pointing at Drawbridge
 6. On 403 or timeout: Kea drops the packet (fail closed)
 7. Device fetches the ZTP script over HTTPS, verifies server cert and payload hash
-8. Script provisions the device, POSTs completion status back to Drawbridge
+8. Script provisions the device; reports completion by writing a JSON status file and
+   issuing `copy flash:status.json http://<drawbridge>/api/provision-complete` (IOS XE
+   `copy` sends a PUT — see [decisions.md](decisions.md) "C9200CX network stack isolation")
 9. Drawbridge calls Kea Control Agent `reservation-del` to remove the device
    from the allowlist, preventing accidental re-provisioning, and deletes
    the device's row from the SQLite `devices` table in the same request —
@@ -112,7 +114,7 @@ drawbridge/
 │   ├── api/
 │   │   ├── lease.py           ← POST /api/lease-event (called by Kea hook)
 │   │   ├── devices.py         ← CRUD for device allowlist
-│   │   ├── ztp.py             ← ZTP script management endpoints
+│   │   ├── files.py           ← File management endpoints
 │   │   ├── auth.py            ← login/logout, current-user endpoints
 │   │   ├── users.py           ← admin CRUD for operator accounts
 │   │   └── settings.py        ← admin get/set of log-retention setting

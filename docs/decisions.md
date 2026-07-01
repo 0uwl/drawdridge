@@ -73,3 +73,17 @@
 
 - **Kea Control Agent on 127.0.0.1:8081.** Default Kea port is 8080, which
   conflicts with Drawbridge. Control Agent is bound to loopback only.
+
+- **C9200CX network stack isolation — `/api/provision-complete` accepts PUT.**
+  Python scripts running on the C9200CX are entirely isolated from the device's
+  own network stack; direct socket calls from the ZTP script fail. The
+  workaround is to write the JSON payload to the device filesystem and issue
+  `copy flash:status.json http://<drawbridge>/api/provision-complete` from IOS
+  XE CLI (via `cli.execute()` in the script). IOS XE's `copy` command issues a
+  PUT request, so the endpoint accepts PUT as its primary method. POST is also
+  accepted for development and testing. The `Content-Type` header is not
+  guaranteed to be set by `copy`, so the endpoint parses the body regardless of
+  content type (`force=True`). This constraint applies to all network I/O in the
+  ZTP script on C9200CX — image and config downloads must similarly be triggered
+  via `cli.execute("copy http://... flash:")` rather than Python's `urllib` or
+  `requests`.

@@ -110,6 +110,27 @@ class Setting(Base):
     updated_by: Mapped[str | None]
 
 
+class ZTPFile(Base):
+    __tablename__ = 'ztp_files'
+
+    file_type:   Mapped[str] = mapped_column(primary_key=True)  # 'image', 'config', 'script'
+    filename:    Mapped[str] = mapped_column(primary_key=True)
+    size_bytes:  Mapped[int]
+    sha256:      Mapped[str]
+    uploaded_at: Mapped[str] = mapped_column(default=utcnow_iso)
+    uploaded_by: Mapped[str | None]
+
+    def as_dict(self) -> dict:
+        return {
+            'file_type': self.file_type,
+            'filename': self.filename,
+            'size_bytes': self.size_bytes,
+            'sha256': self.sha256,
+            'uploaded_at': self.uploaded_at,
+            'uploaded_by': self.uploaded_by,
+        }
+
+
 class User(Base, UserMixin):
     __tablename__ = 'users'
 

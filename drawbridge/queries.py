@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from drawbridge.models import Device, ProvisioningSession, ProvisioningLog, Setting, User, utcnow_iso
+from drawbridge.models import Device, ProvisioningSession, ProvisioningLog, Setting, User, ZTPFile, utcnow_iso
 
 # Device queries
 
@@ -177,6 +177,42 @@ def add_log_entry(
     )
     session.add(entry)
     return entry
+
+
+# ZTPFile queries
+
+def get_file(session: Session, file_type: str, filename: str) -> ZTPFile | None:
+    return session.get(ZTPFile, (file_type, filename))
+
+
+def list_files(session: Session, file_type: str) -> list[ZTPFile]:
+    return list(session.scalars(
+        select(ZTPFile)
+        .where(ZTPFile.file_type == file_type)
+        .order_by(ZTPFile.uploaded_at)
+    ).all())
+
+
+def add_file(
+    session: Session,
+    *,
+    file_type: str,
+    filename: str,
+    size_bytes: int,
+    sha256: str,
+    uploaded_by: str | None = None,
+) -> ZTPFile:
+    f = ZTPFile(file_type=file_type, filename=filename, size_bytes=size_bytes, sha256=sha256, uploaded_by=uploaded_by)
+    session.add(f)
+    return f
+
+
+def delete_file(session: Session, file_type: str, filename: str) -> bool:
+    f = session.get(ZTPFile, (file_type, filename))
+    if f is None:
+        return False
+    session.delete(f)
+    return True
 
 
 def purge_expired_logs(session: Session, retention_days: str) -> None:

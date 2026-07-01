@@ -15,8 +15,19 @@
 | GET | `/api/devices/<serial>` | Get a pending device's status (not history — see `/api/log`) |
 | GET | `/api/devices/sessions` | List all active provisioning sessions |
 | GET | `/api/devices/sessions/<serial>` | Get the active provisioning session for a device |
-| GET | `/scripts/<filename>` | Serve ZTP scripts to devices (HTTPS) |
-| POST | `/api/provision-complete` | Device reports provisioning outcome; deletes the `devices` row, writes a `ProvisioningLog` row |
+| GET | `/files/images` | List uploaded OS images (auth required) |
+| POST | `/files/images` | Upload an OS image (auth required) |
+| GET | `/files/images/<filename>` | Download an OS image — unauthenticated, served to devices during ZTP |
+| DELETE | `/files/images/<filename>` | Delete an OS image (auth required) |
+| GET | `/files/configs` | List uploaded config files (auth required) |
+| POST | `/files/configs` | Upload a config file (auth required) |
+| GET | `/files/configs/<filename>` | Download a config file — unauthenticated, served to devices during ZTP |
+| DELETE | `/files/configs/<filename>` | Delete a config file (auth required) |
+| GET | `/files/scripts` | List uploaded ZTP scripts (auth required) |
+| POST | `/files/scripts` | Upload a ZTP script (auth required) |
+| GET | `/files/scripts/<filename>` | Download a ZTP script — unauthenticated, served to devices during ZTP |
+| DELETE | `/files/scripts/<filename>` | Delete a ZTP script (auth required) |
+| PUT | `/api/provision-complete` | Device reports provisioning outcome; deletes the `devices` row, writes a `ProvisioningLog` row. POST is also accepted for testing/debugging. |
 | GET | `/api/log` | List provisioning log entries (time, image, config file, outcome) within the retention window |
 | POST | `/api/auth/login` | Local username/password login, starts session |
 | POST | `/api/auth/logout` | Ends the current session |
@@ -28,9 +39,11 @@
 | PUT | `/api/settings/log-retention` | Update log retention setting (admin only) |
 
 Every `/api/devices`, `/api/log`, `/api/users`, `/api/settings/*`, and
-`/scripts/<filename>` (management, not the device's own fetch) route
-requires an authenticated session via `@login_required` — see
-[authentication.md](authentication.md). `/api/lease-event` and
+`GET /files/*` list / `POST /files/*` upload / `DELETE /files/*` delete route
+requires an authenticated session — see [authentication.md](authentication.md).
+`GET /files/<type>/<filename>` download endpoints are unauthenticated so that
+IOS XE devices can fetch images, configs, and scripts during ZTP without
+credentials; access is restricted at the network level (provisioning VLAN). `/api/lease-event` and
 `/api/provision-complete` are called by Kea/devices, not operators. The
 primary security boundary is network isolation (provisioning VLAN/loopback —
 see [architecture.md](architecture.md)). `/api/lease-event` additionally

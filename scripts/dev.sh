@@ -16,7 +16,7 @@ pip install -q -r requirements.txt
 export FLASK_APP=drawbridge/main.py
 export FLASK_DEBUG=1
 export DATABASE_PATH="${DATABASE_PATH:-./tests/dev-data/drawbridge.db}"
-export SCRIPTS_PATH="${SCRIPTS_PATH:-./scripts}"
+export FILES_PATH="${FILES_PATH:-./files}"
 export KEA_CTRL_URL="${KEA_CTRL_URL:-http://localhost:8081}"
 export SECRET_KEY="${SECRET_KEY:-dev-only-insecure-secret-key}"
 mkdir -p tests/dev-data
