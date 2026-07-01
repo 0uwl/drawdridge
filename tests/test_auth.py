@@ -1,9 +1,11 @@
 import pytest
 from flask_login import login_required
+from werkzeug.security import generate_password_hash
 
 from drawbridge import create_app
-from drawbridge.auth import kea_endpoint, load_user
+from drawbridge.auth import admin_required, kea_endpoint, load_user
 from drawbridge.db import get_session
+from drawbridge.models import User
 from drawbridge import queries
 
 
@@ -41,6 +43,50 @@ def test_protected_route_without_session_returns_json_401(app):
 
     assert response.status_code == 401
     assert response.get_json()['success'] is False
+
+
+# admin_required decorator — tests use a minimal /_test/admin route
+# registered on the per-test app fixture so there are no cross-test route
+# conflicts.
+
+PASSWORD = 'test-password-123'
+
+
+def _register_admin_test_route(app):
+    @app.route('/_test/admin')
+    @admin_required
+    def _admin():
+        return 'ok'
+    return app.test_client()
+
+
+def _create_and_login(app, client, *, role):
+    with app.app_context():
+        session = get_session()
+        session.add(User(username=f'test-{role}', role=role, auth_source='local', password_hash=generate_password_hash(PASSWORD)))
+        session.commit()
+    client.post('/api/v1/auth/login', json={'username': f'test-{role}', 'password': PASSWORD})
+
+
+def test_admin_required_returns_401_when_not_logged_in(app):
+    client = _register_admin_test_route(app)
+    response = client.get('/_test/admin')
+    assert response.status_code == 401
+
+
+def test_admin_required_returns_403_for_operator(app):
+    client = _register_admin_test_route(app)
+    _create_and_login(app, client, role='operator')
+    response = client.get('/_test/admin')
+    assert response.status_code == 403
+    assert response.get_json()['success'] is False
+
+
+def test_admin_required_allows_admin(app):
+    client = _register_admin_test_route(app)
+    _create_and_login(app, client, role='admin')
+    response = client.get('/_test/admin')
+    assert response.status_code == 200
 
 
 # kea_endpoint decorator — tests use a minimal /_test/kea route registered

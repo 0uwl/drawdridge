@@ -54,6 +54,41 @@ def user(app):
 
 
 @pytest.fixture()
+def admin_user(app):
+    """A second admin distinct from the bootstrap 'admin' created by
+    init_db(), so tests can log in as a known-password admin while still
+    having a bootstrap admin around to delete/demote in last-admin-guard
+    tests."""
+    with app.app_context():
+        session = get_session()
+        u = User(
+            username='test-admin',
+            role='admin',
+            auth_source='local',
+            password_hash=generate_password_hash(PASSWORD),
+        )
+        session.add(u)
+        session.commit()
+    return u
+
+
+@pytest.fixture()
+def unclaimed_user(app):
+    """An admin-created local account that hasn't claimed a password yet."""
+    with app.app_context():
+        session = get_session()
+        u = User(
+            username='new-operator',
+            role='operator',
+            auth_source='local',
+            password_hash=None,
+        )
+        session.add(u)
+        session.commit()
+    return u
+
+
+@pytest.fixture()
 def saml_user(app):
     with app.app_context():
         session = get_session()
@@ -71,4 +106,10 @@ def saml_user(app):
 @pytest.fixture()
 def logged_in_client(app, user, client):
     client.post('/api/v1/auth/login', json={'username': user.username, 'password': PASSWORD})
+    return client
+
+
+@pytest.fixture()
+def logged_in_admin_client(app, admin_user, client):
+    client.post('/api/v1/auth/login', json={'username': admin_user.username, 'password': PASSWORD})
     return client

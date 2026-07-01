@@ -101,8 +101,9 @@ def create_app(config_dict: dict = {}):
     app.register_blueprint(files.create_blueprint(), url_prefix=f'/files')
     app.logger.debug("Registered Blueprint 'files.py'")
 
-    # TODO(drawbridge): register remaining blueprints as they are written
-    # from drawbridge.api import users, settings
+    from drawbridge.api import settings
+    app.register_blueprint(settings.create_blueprint(), url_prefix=API_PREFIX)
+    app.logger.debug("Registered Blueprint 'settings.py'")
 
     for subdir in ('images', 'configs', 'scripts'):
         os.makedirs(os.path.join(app.config['FILES_PATH'], subdir), exist_ok=True)

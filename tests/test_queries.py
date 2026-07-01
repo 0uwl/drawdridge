@@ -187,6 +187,42 @@ def test_get_user_by_username_and_id(session):
     assert queries.get_user_by_username(session, 'nobody') is None
 
 
+def test_create_user_has_no_password_set(session):
+    user = queries.create_user(session, username='new-operator', role='operator')
+    session.commit()
+
+    assert user.password_hash is None
+    assert user.auth_source == 'local'
+    assert user.role == 'operator'
+
+
+def test_count_admins_counts_only_admin_role(session):
+    # the bootstrap 'admin' user already exists on a fresh test DB
+    assert queries.count_admins(session) == 1
+
+    queries.create_user(session, username='another-admin', role='admin')
+    queries.create_user(session, username='an-operator', role='operator')
+    session.commit()
+
+    assert queries.count_admins(session) == 2
+
+
+def test_delete_user_removes_and_returns_the_user(session):
+    created = queries.create_user(session, username='new-operator', role='operator')
+    session.commit()
+    user_id = created.id
+
+    deleted = queries.delete_user(session, user_id)
+    session.commit()
+
+    assert deleted is not None
+    assert queries.get_user_by_id(session, user_id) is None
+
+
+def test_delete_user_returns_none_when_not_found(session):
+    assert queries.delete_user(session, 999999) is None
+
+
 # Setting queries
 
 def test_set_setting_creates_then_updates(session):

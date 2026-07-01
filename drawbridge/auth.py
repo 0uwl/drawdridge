@@ -1,13 +1,26 @@
 from functools import wraps
 
 from flask import current_app, request
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user, login_required
 
 from drawbridge.db import get_session
 from drawbridge.queries import get_user_by_id
 from drawbridge.utils import error_response
 
 login_manager = LoginManager()
+
+
+def admin_required(f):
+    """Restricts access to admin-role operators. Stacks on top of
+    @login_required — an unauthenticated caller still gets the standard 401,
+    not a 403, since role isn't known until identity is."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if current_user.role != 'admin':
+            return error_response('Admin role required', 'forbidden', code=403, silent=True)
+        return f(*args, **kwargs)
+    return decorated
 
 
 def kea_endpoint(f):

@@ -1,3 +1,5 @@
+from werkzeug.security import check_password_hash
+
 from drawbridge.db import get_session
 from drawbridge.models import User
 
@@ -87,3 +89,72 @@ def test_me_returns_current_user_when_logged_in(logged_in_client, user):
 def test_me_returns_401_when_not_logged_in(client):
     response = client.get(f'{BASE}/auth/me')
     assert response.status_code == 401
+
+
+# POST /api/v1/auth/claim
+
+def test_claim_sets_password_on_unclaimed_local_account(app, client, unclaimed_user):
+    response = client.post(f'{BASE}/auth/claim', json={'username': unclaimed_user.username, 'password': 'new-pass-123'})
+    assert response.status_code == 200
+    with app.app_context():
+        updated = get_session().get(User, unclaimed_user.id)
+        assert updated.password_hash is not None
+        assert check_password_hash(updated.password_hash, 'new-pass-123')
+
+
+def test_claim_allows_login_afterwards(client, unclaimed_user):
+    client.post(f'{BASE}/auth/claim', json={'username': unclaimed_user.username, 'password': 'new-pass-123'})
+    response = client.post(f'{BASE}/auth/login', json={'username': unclaimed_user.username, 'password': 'new-pass-123'})
+    assert response.status_code == 200
+
+
+def test_claim_returns_400_when_already_claimed(client, user):
+    response = client.post(f'{BASE}/auth/claim', json={'username': user.username, 'password': 'whatever'})
+    assert response.status_code == 400
+
+
+def test_claim_returns_400_for_saml_only_account(client, saml_user):
+    response = client.post(f'{BASE}/auth/claim', json={'username': saml_user.username, 'password': 'whatever'})
+    assert response.status_code == 400
+
+
+def test_claim_returns_400_for_unknown_username(client):
+    response = client.post(f'{BASE}/auth/claim', json={'username': 'nobody', 'password': 'whatever'})
+    assert response.status_code == 400
+
+
+def test_claim_returns_400_when_password_missing(client, unclaimed_user):
+    response = client.post(f'{BASE}/auth/claim', json={'username': unclaimed_user.username})
+    assert response.status_code == 400
+
+
+# POST /api/v1/auth/change-password
+
+def test_change_password_returns_401_when_not_logged_in(client):
+    response = client.post(f'{BASE}/auth/change-password', json={'current_password': PASSWORD, 'new_password': 'new-pass'})
+    assert response.status_code == 401
+
+
+def test_change_password_succeeds_with_correct_current_password(app, logged_in_client, user):
+    response = logged_in_client.post(f'{BASE}/auth/change-password', json={'current_password': PASSWORD, 'new_password': 'new-pass-123'})
+    assert response.status_code == 200
+    with app.app_context():
+        updated = get_session().get(User, user.id)
+        assert check_password_hash(updated.password_hash, 'new-pass-123')
+
+
+def test_change_password_returns_400_with_wrong_current_password(logged_in_client):
+    response = logged_in_client.post(f'{BASE}/auth/change-password', json={'current_password': 'wrong', 'new_password': 'new-pass-123'})
+    assert response.status_code == 400
+
+
+def test_change_password_returns_400_when_new_password_missing(logged_in_client):
+    response = logged_in_client.post(f'{BASE}/auth/change-password', json={'current_password': PASSWORD})
+    assert response.status_code == 400
+
+
+def test_new_password_works_for_subsequent_login(client, logged_in_client, user):
+    logged_in_client.post(f'{BASE}/auth/change-password', json={'current_password': PASSWORD, 'new_password': 'new-pass-123'})
+    logged_in_client.post(f'{BASE}/auth/logout')
+    response = client.post(f'{BASE}/auth/login', json={'username': user.username, 'password': 'new-pass-123'})
+    assert response.status_code == 200

@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required, login_user, logout_user
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from drawbridge.db import get_session
 from drawbridge.models import utcnow_iso
@@ -36,6 +36,50 @@ def create_blueprint():
 
         login_user(user)
         return success_response('Logged in', payload=_user_payload(user))
+
+    @bp.post('/claim')
+    def claim():
+        """First-time password creation for an admin-created local account.
+        Unauthenticated by necessity (the account has no password yet), but
+        only succeeds against a local account that has never been claimed —
+        auth_source='local' and password_hash still NULL. SAML-only accounts
+        also have a NULL password_hash; auth_source keeps the two from being
+        conflated. First successful claim wins — see docs/authentication.md
+        for why this race is an accepted tradeoff rather than a token flow."""
+        data = request.get_json(silent=True) or {}
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+
+        if not username or not password:
+            return error_response('Username and password are required', 'invalid_request', code=400)
+
+        session = get_session()
+        user = get_user_by_username(session, username)
+
+        if not user or user.auth_source != 'local' or user.password_hash is not None:
+            return error_response('Invalid claim request', 'invalid_claim', code=400, silent=True)
+
+        user.password_hash = generate_password_hash(password)
+        session.commit()
+        return success_response('Password set')
+
+    @bp.post('/change-password')
+    @login_required
+    def change_password():
+        data = request.get_json(silent=True) or {}
+        current_password = data.get('current_password', '')
+        new_password = data.get('new_password', '')
+
+        if not current_password or not new_password:
+            return error_response('Current and new password are required', 'invalid_request', code=400)
+
+        if not current_user.password_hash or not check_password_hash(current_user.password_hash, current_password):
+            return error_response('Current password is incorrect', 'invalid_credentials', code=400, silent=True)
+
+        session = get_session()
+        current_user.password_hash = generate_password_hash(new_password)
+        session.commit()
+        return success_response('Password changed')
 
     @bp.post('/logout')
     @login_required

@@ -21,6 +21,42 @@ Local and SAML authentication are intended to coexist indefinitely, not
 SAML-replaces-local — `User.auth_source` distinguishes them and
 `password_hash` stays nullable for SAML-only accounts.
 
+## User management and account lifecycle
+
+Two roles: `admin` and `operator`. Operators can do everything except manage
+other accounts — they have no access to `/api/users`. Only admins can create
+accounts, change roles, or delete accounts.
+
+**First admin** — bootstrapped on first startup (see
+[decisions.md](decisions.md) / `alpha.md`): username `admin`, a random
+password printed to stdout once.
+
+**Subsequent accounts** — an admin creates a user with just a username and a
+role via `POST /api/users`. No password is set at creation time
+(`password_hash` stays `NULL`, `auth_source='local'`). The account is
+unusable via `/login` in this state — `login()` treats a null
+`password_hash` as invalid credentials for both this case and SAML-only
+accounts, so the two must not be conflated.
+
+The first person to `POST /api/auth/claim` with that username and a new
+password sets it, filling in `password_hash`. This is deliberately
+passwordless-until-claimed rather than a temp-password/token flow: simpler,
+and accepted as a known tradeoff — since only admins create accounts on an
+internal, network-isolated deployment, the account-takeover race (someone
+else claiming the username first) is treated as low risk for alpha. Revisit
+if Drawbridge's threat model changes (e.g. self-service signup, exposure
+beyond the isolated network).
+
+Once claimed, a user changes their own password later via
+`POST /api/auth/change-password` (requires their current password). There is
+no separate admin-triggered password reset in alpha — an admin who needs to
+let a user re-claim their account deletes and recreates it.
+
+**Deletion** — an admin can delete any other account via `DELETE
+/api/users/<id>` without needing that user's password. Deleting or demoting
+(via `PUT /api/users/<id>`) the last remaining admin is rejected, so the
+system can never end up with zero admins.
+
 ## Planned: SAML SP integration
 
 Not implemented yet. When added:

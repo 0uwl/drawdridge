@@ -32,9 +32,12 @@
 | POST | `/api/auth/login` | Local username/password login, starts session |
 | POST | `/api/auth/logout` | Ends the current session |
 | GET | `/api/auth/me` | Current authenticated operator (id, username, role, auth_source) |
+| POST | `/api/auth/claim` | First-time password creation for an admin-created local account (`username` + `password`, unauthenticated) |
+| POST | `/api/auth/change-password` | Change the current user's own password (`current_password` + `new_password`, any role) |
 | GET | `/api/users` | List operator accounts (admin only) |
-| POST | `/api/users` | Create an operator account (admin only) |
-| DELETE | `/api/users/<id>` | Remove an operator account (admin only) |
+| POST | `/api/users` | Create an operator account with no password set yet (admin only) |
+| PUT | `/api/users/<id>` | Change an operator's role (admin only) |
+| DELETE | `/api/users/<id>` | Remove an operator account, no password confirmation required (admin only) |
 | GET | `/api/settings/log-retention` | Current log retention setting (days, or indefinite) |
 | PUT | `/api/settings/log-retention` | Update log retention setting (admin only) |
 
@@ -44,7 +47,10 @@ requires an authenticated session — see [authentication.md](authentication.md)
 `GET /files/<type>/<filename>` download endpoints are unauthenticated so that
 IOS XE devices can fetch images, configs, and scripts during ZTP without
 credentials; access is restricted at the network level (provisioning VLAN). `/api/lease-event` and
-`/api/provision-complete` are called by Kea/devices, not operators. The
+`/api/provision-complete` are called by Kea/devices, not operators.
+`/api/auth/claim` is also unauthenticated by necessity — a newly created
+account has no password yet — but only succeeds against a local account that
+has never been claimed; see [authentication.md](authentication.md). The
 primary security boundary is network isolation (provisioning VLAN/loopback —
 see [architecture.md](architecture.md)). `/api/lease-event` additionally
 enforces origin-based access control via the `kea_endpoint` decorator:

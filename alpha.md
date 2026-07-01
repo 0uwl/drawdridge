@@ -86,10 +86,18 @@ before any tests:
    `devices` row, writes `ProvisioningLog`).
 4. (DONE) `files.py` — `GET /scripts/<filename>`, `GET /images/<filename>`, `GET /configs/<filename>` (unauthenticated device-facing
    fetch), the authenticated management variant for file upload/listing.
-5. `users.py` — admin-only CRUD for operator accounts.
-6. `settings.py` — `GET/PUT /api/settings/log-retention`, admin-only on PUT.
-   Wire the lazy-purge-on-insert logic here and into the `ProvisioningLog`
-   insert path used by `lease.py`/`files.py`.
+5. `settings.py` — merges what would have been a separate `users.py`:
+   admin-only CRUD for operator accounts (`GET/POST /api/users`,
+   `PUT/DELETE /api/users/<id>`) alongside `GET/PUT
+   /api/settings/log-retention` (admin-only on PUT). Wire the
+   lazy-purge-on-insert logic here and into the `ProvisioningLog` insert path
+   used by `lease.py`/`files.py`. Last-remaining-admin deletes/demotions are
+   rejected. See [docs/authentication.md](docs/authentication.md) for the
+   account lifecycle (admin creates username+role only, passwordless until
+   the user claims it via `/api/auth/claim`). The password-claim and
+   self-service change-password routes live in `auth.py` instead, since they
+   act on the caller's own identity rather than admin CRUD on other
+   accounts — `POST /api/auth/claim`, `POST /api/auth/change-password`.
 
 Register all blueprints in `create_app()` (the TODO already marks where) and
 apply `@login_required` per the matrix in [docs/api.md](docs/api.md) — only
@@ -137,12 +145,16 @@ of where in the tree a component sits.
   `drawbridge/utils.py` and redirects to `/login` on a 401).
 - `frontend/src/stores/` — one Pinia store per domain, each owning its own
   axios calls against `client.js`:
-  - `auth.js` — `login()`, `logout()`, `fetchMe()`, holds `currentUser`.
+  - `auth.js` — `login()`, `logout()`, `fetchMe()`, `claim()`,
+    `changePassword()`, holds `currentUser`.
   - `devices.js` — `list()`, `add()`, `remove()`.
   - `log.js` — `fetchLog()`.
-  - `users.js`, `settings.js` — bare-bones CRUD/get-set, admin-only.
-- Views: Login, Devices (list/add/remove), Log, Users, Settings — each thin,
-  delegating to its store.
+  - `users.js`, `settings.js` — bare-bones CRUD/get-set, admin-only. Kept as
+    separate stores (one per domain) even though their views are merged.
+- Views: Login, Devices (list/add/remove), Log, Settings — each thin,
+  delegating to its store(s). Settings hosts both the log-retention form and
+  admin-only user management (list/create/change-role/delete) in one page,
+  backed by the separate `users.js`/`settings.js` stores.
 - Vue Router so the catch-all `index.html` fallback in `main.py` has routes
   to resolve on a hard refresh; a navigation guard redirects to `/login`
   when `auth.currentUser` is unset.

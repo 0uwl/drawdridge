@@ -8,7 +8,7 @@ checking a device then writing a ProvisioningLog row) can do so atomically.
 """
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from drawbridge.models import Device, ProvisioningSession, ProvisioningLog, Setting, User, ZTPFile, utcnow_iso
@@ -129,6 +129,29 @@ def get_user_by_id(session: Session, user_id: int) -> User | None:
 
 def list_users(session: Session) -> list[User]:
     return list(session.scalars(select(User).order_by(User.username)).all())
+
+
+def count_admins(session: Session) -> int:
+    return session.scalar(select(func.count()).select_from(User).where(User.role == 'admin'))
+
+
+def create_user(session: Session, *, username: str, role: str) -> User:
+    """Admin-created account: no password set yet — password_hash stays NULL
+    until the user claims it via POST /api/auth/claim (see
+    docs/authentication.md)."""
+    user = User(username=username, role=role, auth_source='local')
+    session.add(user)
+    return user
+
+
+def delete_user(session: Session, user_id: int) -> User | None:
+    """Returns the deleted User (detached, caller's job to check role/admin
+    guards before calling) or None if not found."""
+    user = session.get(User, user_id)
+    if user is None:
+        return None
+    session.delete(user)
+    return user
 
 
 # Setting queries
