@@ -16,7 +16,7 @@ def utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec='microseconds')
 
 
-class Device(Base):
+class UnprovisionedDevice(Base):
     """Pre-provisioning allowlist only. A row exists from registration until
     /api/provision-complete fires, at which point it is deleted"""
     __tablename__ = 'devices'

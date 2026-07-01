@@ -11,16 +11,16 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from drawbridge.models import Device, ProvisioningLog, Setting, User, utcnow_iso
+from drawbridge.models import UnprovisionedDevice, ProvisioningLog, Setting, User, utcnow_iso
 
 # Device queries
 
-def get_device(session: Session, serial: str) -> Device | None:
-    return session.get(Device, serial)
+def get_device(session: Session, serial: str) -> UnprovisionedDevice | None:
+    return session.get(UnprovisionedDevice, serial)
 
 
-def list_devices(session: Session) -> list[Device]:
-    return list(session.scalars(select(Device).order_by(Device.added_at)).all())
+def list_devices(session: Session) -> list[UnprovisionedDevice]:
+    return list(session.scalars(select(UnprovisionedDevice).order_by(UnprovisionedDevice.added_at)).all())
 
 
 def add_device(
@@ -30,23 +30,23 @@ def add_device(
     mac: str | None = None,
     description: str | None = None,
     added_by: str | None = None,
-) -> Device:
+) -> UnprovisionedDevice:
     """Idempotent on serial: re-registering an existing serial updates its
     mutable fields instead of raising on the primary-key collision."""
-    device = session.get(Device, serial)
+    device = session.get(UnprovisionedDevice, serial)
     if device is not None:
         device.mac = mac
         device.description = description
         device.added_by = added_by
         return device
 
-    device = Device(serial=serial, mac=mac, description=description, added_by=added_by)
+    device = UnprovisionedDevice(serial=serial, mac=mac, description=description, added_by=added_by)
     session.add(device)
     return device
 
 
 def delete_device(session: Session, serial: str) -> bool:
-    device = session.get(Device, serial)
+    device = session.get(UnprovisionedDevice, serial)
     if device is None:
         return False
     session.delete(device)

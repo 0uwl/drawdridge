@@ -77,11 +77,11 @@ def create_app(config_dict: dict = {}):
     def health_check():
         return jsonify({'status': 'healthy'}), 200
 
-    # TODO(drawbridge): register blueprints once written, e.g.
-    # from drawbridge.api import lease, devices, scripts
-    # app.register_blueprint(lease.create_blueprint(), url_prefix='/api')
-    # app.register_blueprint(devices.create_blueprint(), url_prefix='/api/devices')
-    # app.register_blueprint(scripts.create_blueprint(), url_prefix='/scripts')
+    from drawbridge.api import auth
+    app.register_blueprint(auth.create_blueprint(), url_prefix='/api')
+
+    # TODO(drawbridge): register remaining blueprints as they are written
+    # from drawbridge.api import devices, lease, ztp, users, settings
 
     init_login_manager(app)
 

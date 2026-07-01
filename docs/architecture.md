@@ -112,7 +112,7 @@ drawbridge/
 │   ├── api/
 │   │   ├── lease.py           ← POST /api/lease-event (called by Kea hook)
 │   │   ├── devices.py         ← CRUD for device allowlist
-│   │   ├── scripts.py         ← ZTP script management endpoints
+│   │   ├── ztp.py             ← ZTP script management endpoints
 │   │   ├── auth.py            ← login/logout, current-user endpoints
 │   │   ├── users.py           ← admin CRUD for operator accounts
 │   │   └── settings.py        ← admin get/set of log-retention setting
