@@ -54,6 +54,6 @@ repo root; `pythonpath = ["."]` under `[tool.pytest.ini_options]` in
 `pyproject.toml` puts the repo root on `sys.path` so `tests/conftest.py` can
 `import drawbridge` without an install.
 
-`scripts/dev.sh` starts a full frontend dev session (Flask backend + Vite
+`dev.sh` starts a full frontend dev session (Flask backend + Vite
 dev server with HMR) in one command — see [docs/frontend.md](docs/frontend.md)
 for the manual two-terminal workflow it wraps.

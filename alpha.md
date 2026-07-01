@@ -30,10 +30,9 @@ catch-all route), `drawbridge/utils.py` (response envelopes, file hashing),
 `tests/conftest.py` (app/client fixtures), frontend scaffolding (Vite config,
 placeholder `App.vue`).
 
-Not yet implemented: `drawbridge/db.py`, `drawbridge/models.py`,
-`drawbridge/auth.py`, `drawbridge/kea.py`, all of `drawbridge/api/`, all
-`kea/*` config files and the hook callout, `scripts/ztp-base.py`, all real
-test files, all real frontend views.
+Not yet implemented: all `kea/*` config files and the hook callout, all real
+frontend views. Test coverage per [docs/testing.md](docs/testing.md)'s
+checklist (step 7) is still in progress.
 
 ## Step-by-step
 
@@ -86,7 +85,7 @@ before any tests:
    `devices` row, writes `ProvisioningLog`).
 4. (DONE) `files.py` — `GET /scripts/<filename>`, `GET /images/<filename>`, `GET /configs/<filename>` (unauthenticated device-facing
    fetch), the authenticated management variant for file upload/listing.
-5. `settings.py` — merges what would have been a separate `users.py`:
+5. (DONE) `settings.py` — merges what would have been a separate `users.py`:
    admin-only CRUD for operator accounts (`GET/POST /api/users`,
    `PUT/DELETE /api/users/<id>`) alongside `GET/PUT
    /api/settings/log-retention` (admin-only on PUT). Wire the
@@ -104,7 +103,7 @@ apply `@login_required` per the matrix in [docs/api.md](docs/api.md) — only
 `/api/lease-event`, `/api/provision-complete`, and the device-facing
 `/scripts/<filename>` stay open.
 
-### 5. Base ZTP script
+### 5. Base ZTP script (DONE)
 - `scripts/ztp-base.py`: a stub for alpha, not a real provisioning script.
   Purpose is to exercise the serve/fetch/callback contract end-to-end for
   testing — it emulates what a device would request and POST back, nothing
@@ -158,7 +157,7 @@ of where in the tree a component sits.
 - Vue Router so the catch-all `index.html` fallback in `main.py` has routes
   to resolve on a hard refresh; a navigation guard redirects to `/login`
   when `auth.currentUser` is unset.
-- Manual pass through `scripts/dev.sh` (Flask + Vite dev server) to confirm
+- Manual pass through `dev.sh` (Flask + Vite dev server) to confirm
   the golden path: log in as the bootstrapped admin, register a device,
   simulate a lease-event via curl, confirm it shows in the log, remove the
   device.
@@ -183,6 +182,6 @@ of where in the tree a component sits.
 3. **Frontend stack** — Vue Router + Pinia + axios, with API calls
    centralized in Pinia stores rather than components (see step 8).
 4. **`tests/dev-data`** — holding directory for the SQLite file
-   `scripts/dev.sh` creates during a live dev session; reused as the
+   `dev.sh` creates during a live dev session; reused as the
    location for test-suite fixtures/seed data once the test suite is built
    in step 7.

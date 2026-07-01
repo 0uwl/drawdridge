@@ -74,6 +74,19 @@
 - **Kea Control Agent on 127.0.0.1:8081.** Default Kea port is 8080, which
   conflicts with Drawbridge. Control Agent is bound to loopback only.
 
+- **Facts-first provisioning is deferred, not rejected.** An idea was raised
+  for a two-phase flow: a small facts-collector script fetched first, which
+  reports device facts (e.g. version/platform) to Drawbridge and gets back
+  the appropriate provisioning script to hand off to, rather than one static
+  script for all devices. This is a reasonable pattern for heterogeneous
+  fleets, but it's real Day-0 provisioning logic — the same category the
+  alpha `ztp-base.py` stub deliberately excludes (see alpha.md step 5) — and
+  it requires schema/API additions alpha doesn't have: a version/platform
+  field on `Device`, and a new endpoint (or facts parameter) for the
+  fetch-then-select round trip, plus a second HTTPS/cert-validation hop.
+  Scope this once real per-device provisioning logic is built and tested
+  against hardware, not before.
+
 - **C9200CX network stack isolation — `/api/provision-complete` accepts PUT.**
   Python scripts running on the C9200CX are entirely isolated from the device's
   own network stack; direct socket calls from the ZTP script fail. The
